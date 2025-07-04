@@ -207,7 +207,7 @@ marimo/_lsp/
 __marimo__/
 
 # Project specific directories
-varco-vision/LLaVA-NEXT/
+varco-vision/LLaVA-NeXT/
 varco-vision/varcoE/
 dataset/Flicker8k_Dataset/
 dataset/Flickr8k/
