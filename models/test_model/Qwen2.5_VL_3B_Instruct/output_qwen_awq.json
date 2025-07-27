@@ -1,0 +1,62 @@
+[
+  {
+    "image_index": 0,
+    "image_filename": "image1.jpg",
+    "image_path": "/home/yongbin53/Research/GalleryProj/image/image1.jpg",
+    "description": "Error: at 108:22:\n        masks_s = masks_sk[:, None] & masks_sn[None, :]\n        scales_ptrs = scales_ptr + offsets_s\n        scales = tl.load(scales_ptrs, mask=masks_s)\n        scales = tl.broadcast_to(scales, (BLOCK_SIZE_K, BLOCK_SIZE_N))\n\n        b = (b >> shifts) & 0xF\n        zeros = (zeros >> shifts) & 0xF\n        b = (b - zeros) * scales\n        b = b.to(c_ptr.type.element_ty)\n\n        # Accumulate results.\n        accumulator = tl.dot(a, b, accumulator, out_dtype=accumulator_dtype)\n                      ^"
+  },
+  {
+    "image_index": 1,
+    "image_filename": "image2.jpg",
+    "image_path": "/home/yongbin53/Research/GalleryProj/image/image2.jpg",
+    "description": "Error: at 108:22:\n        masks_s = masks_sk[:, None] & masks_sn[None, :]\n        scales_ptrs = scales_ptr + offsets_s\n        scales = tl.load(scales_ptrs, mask=masks_s)\n        scales = tl.broadcast_to(scales, (BLOCK_SIZE_K, BLOCK_SIZE_N))\n\n        b = (b >> shifts) & 0xF\n        zeros = (zeros >> shifts) & 0xF\n        b = (b - zeros) * scales\n        b = b.to(c_ptr.type.element_ty)\n\n        # Accumulate results.\n        accumulator = tl.dot(a, b, accumulator, out_dtype=accumulator_dtype)\n                      ^"
+  },
+  {
+    "image_index": 2,
+    "image_filename": "image3.jpg",
+    "image_path": "/home/yongbin53/Research/GalleryProj/image/image3.jpg",
+    "description": "Error: at 108:22:\n        masks_s = masks_sk[:, None] & masks_sn[None, :]\n        scales_ptrs = scales_ptr + offsets_s\n        scales = tl.load(scales_ptrs, mask=masks_s)\n        scales = tl.broadcast_to(scales, (BLOCK_SIZE_K, BLOCK_SIZE_N))\n\n        b = (b >> shifts) & 0xF\n        zeros = (zeros >> shifts) & 0xF\n        b = (b - zeros) * scales\n        b = b.to(c_ptr.type.element_ty)\n\n        # Accumulate results.\n        accumulator = tl.dot(a, b, accumulator, out_dtype=accumulator_dtype)\n                      ^"
+  },
+  {
+    "image_index": 3,
+    "image_filename": "image4.jpg",
+    "image_path": "/home/yongbin53/Research/GalleryProj/image/image4.jpg",
+    "description": "Error: at 108:22:\n        masks_s = masks_sk[:, None] & masks_sn[None, :]\n        scales_ptrs = scales_ptr + offsets_s\n        scales = tl.load(scales_ptrs, mask=masks_s)\n        scales = tl.broadcast_to(scales, (BLOCK_SIZE_K, BLOCK_SIZE_N))\n\n        b = (b >> shifts) & 0xF\n        zeros = (zeros >> shifts) & 0xF\n        b = (b - zeros) * scales\n        b = b.to(c_ptr.type.element_ty)\n\n        # Accumulate results.\n        accumulator = tl.dot(a, b, accumulator, out_dtype=accumulator_dtype)\n                      ^"
+  },
+  {
+    "image_index": 4,
+    "image_filename": "image5.jpg",
+    "image_path": "/home/yongbin53/Research/GalleryProj/image/image5.jpg",
+    "description": "Error: at 108:22:\n        masks_s = masks_sk[:, None] & masks_sn[None, :]\n        scales_ptrs = scales_ptr + offsets_s\n        scales = tl.load(scales_ptrs, mask=masks_s)\n        scales = tl.broadcast_to(scales, (BLOCK_SIZE_K, BLOCK_SIZE_N))\n\n        b = (b >> shifts) & 0xF\n        zeros = (zeros >> shifts) & 0xF\n        b = (b - zeros) * scales\n        b = b.to(c_ptr.type.element_ty)\n\n        # Accumulate results.\n        accumulator = tl.dot(a, b, accumulator, out_dtype=accumulator_dtype)\n                      ^"
+  },
+  {
+    "image_index": 5,
+    "image_filename": "image6.jpg",
+    "image_path": "/home/yongbin53/Research/GalleryProj/image/image6.jpg",
+    "description": "Error: at 108:22:\n        masks_s = masks_sk[:, None] & masks_sn[None, :]\n        scales_ptrs = scales_ptr + offsets_s\n        scales = tl.load(scales_ptrs, mask=masks_s)\n        scales = tl.broadcast_to(scales, (BLOCK_SIZE_K, BLOCK_SIZE_N))\n\n        b = (b >> shifts) & 0xF\n        zeros = (zeros >> shifts) & 0xF\n        b = (b - zeros) * scales\n        b = b.to(c_ptr.type.element_ty)\n\n        # Accumulate results.\n        accumulator = tl.dot(a, b, accumulator, out_dtype=accumulator_dtype)\n                      ^"
+  },
+  {
+    "image_index": 6,
+    "image_filename": "image7.jpg",
+    "image_path": "/home/yongbin53/Research/GalleryProj/image/image7.jpg",
+    "description": "Error: at 108:22:\n        masks_s = masks_sk[:, None] & masks_sn[None, :]\n        scales_ptrs = scales_ptr + offsets_s\n        scales = tl.load(scales_ptrs, mask=masks_s)\n        scales = tl.broadcast_to(scales, (BLOCK_SIZE_K, BLOCK_SIZE_N))\n\n        b = (b >> shifts) & 0xF\n        zeros = (zeros >> shifts) & 0xF\n        b = (b - zeros) * scales\n        b = b.to(c_ptr.type.element_ty)\n\n        # Accumulate results.\n        accumulator = tl.dot(a, b, accumulator, out_dtype=accumulator_dtype)\n                      ^"
+  },
+  {
+    "image_index": 7,
+    "image_filename": "image8.jpg",
+    "image_path": "/home/yongbin53/Research/GalleryProj/image/image8.jpg",
+    "description": "Error: at 108:22:\n        masks_s = masks_sk[:, None] & masks_sn[None, :]\n        scales_ptrs = scales_ptr + offsets_s\n        scales = tl.load(scales_ptrs, mask=masks_s)\n        scales = tl.broadcast_to(scales, (BLOCK_SIZE_K, BLOCK_SIZE_N))\n\n        b = (b >> shifts) & 0xF\n        zeros = (zeros >> shifts) & 0xF\n        b = (b - zeros) * scales\n        b = b.to(c_ptr.type.element_ty)\n\n        # Accumulate results.\n        accumulator = tl.dot(a, b, accumulator, out_dtype=accumulator_dtype)\n                      ^"
+  },
+  {
+    "image_index": 8,
+    "image_filename": "image9.jpg",
+    "image_path": "/home/yongbin53/Research/GalleryProj/image/image9.jpg",
+    "description": "Error: at 108:22:\n        masks_s = masks_sk[:, None] & masks_sn[None, :]\n        scales_ptrs = scales_ptr + offsets_s\n        scales = tl.load(scales_ptrs, mask=masks_s)\n        scales = tl.broadcast_to(scales, (BLOCK_SIZE_K, BLOCK_SIZE_N))\n\n        b = (b >> shifts) & 0xF\n        zeros = (zeros >> shifts) & 0xF\n        b = (b - zeros) * scales\n        b = b.to(c_ptr.type.element_ty)\n\n        # Accumulate results.\n        accumulator = tl.dot(a, b, accumulator, out_dtype=accumulator_dtype)\n                      ^"
+  },
+  {
+    "image_index": 9,
+    "image_filename": "image10.jpg",
+    "image_path": "/home/yongbin53/Research/GalleryProj/image/image10.jpg",
+    "description": "Error: at 108:22:\n        masks_s = masks_sk[:, None] & masks_sn[None, :]\n        scales_ptrs = scales_ptr + offsets_s\n        scales = tl.load(scales_ptrs, mask=masks_s)\n        scales = tl.broadcast_to(scales, (BLOCK_SIZE_K, BLOCK_SIZE_N))\n\n        b = (b >> shifts) & 0xF\n        zeros = (zeros >> shifts) & 0xF\n        b = (b - zeros) * scales\n        b = b.to(c_ptr.type.element_ty)\n\n        # Accumulate results.\n        accumulator = tl.dot(a, b, accumulator, out_dtype=accumulator_dtype)\n                      ^"
+  }
+]

@@ -1,0 +1,14 @@
+torch>=2.0.0
+torchvision>=0.15.0
+torchaudio>=2.0.0
+transformers>=4.37.0
+qwen-vl-utils
+Pillow>=9.0.0
+accelerate>=0.20.0
+sentencepiece>=0.1.99
+protobuf>=3.20.0
+unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git
+bitsandbytes>=0.41.0
+peft>=0.4.0
+trl>=0.4.7
+datasets>=2.0.0 
