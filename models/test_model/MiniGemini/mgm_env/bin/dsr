@@ -1,0 +1,6 @@
+#!/home/yongbin53/Research/GalleryProj/Rephoto_AI/models/test_model/MiniGemini/mgm_env/bin/python3.11
+
+from deepspeed.env_report import cli_main
+
+if __name__ == '__main__':
+    cli_main()
