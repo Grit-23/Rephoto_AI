@@ -207,7 +207,23 @@ marimo/_lsp/
 __marimo__/
 
 # Project specific directories
-varco-vision/LLaVA-NeXT/
-varco-vision/varcoE/
-dataset/Flicker8k_Dataset/
+models/test_model/varco-vision/LLaVA-NeXT/
+models/test_model/varco-vision/varco_env/
+dataset/Flicker8k_images/
 dataset/Flickr8k/
+
+# Docker
+.dockerignore
+
+# API keys and configuration
+api_keys.json
+secrets.json
+credentials.json
+
+# FastAPI specific
+uvicorn.log
+
+# OS generated files (additional)
+.DS_Store?
+Thumbs.db
+ehthumbs.db
