@@ -55,7 +55,16 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
       
+      - name: pull latest image
+        run: |
+          docker pull ${{ env.DOCKER_IMAGE }}:latest
+
+      - name: stop and remove old container
+        run: |
+          docker stop ${{ env.NAME }} || true
+          docker rm ${{ env.NAME }} || true
+          docker rmi ${{ env.DOCKER_IMAGE }}:latest || true
+
       - name: Docker run
         run: |
-          docker stop ${{ env.NAME }} && docker rm ${{ env.NAME }} && docker rmi ${{ env.DOCKER_IMAGE }}:latest
           docker run -d -p 8000:8000 --name ${{ env.NAME }} --restart always ${{ env.DOCKER_IMAGE }}:latest
