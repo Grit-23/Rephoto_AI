@@ -5,9 +5,9 @@ on:
     branches: [ main ]
 
 env:
-  DOCKER_IMAGE: ${{ secrets.DOCKER_USERNAME }}/rephoto
+  DOCKER_IMAGE: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}
   VERSION: ${{ github.sha }}
-  NAME: rephoto
+  NAME: ${{ secrets.DOCKER_REPOSITORY }}
 
 jobs:
   build:
