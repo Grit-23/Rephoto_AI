@@ -20,9 +20,9 @@ class QwenCaptionService:
             os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
             
             self.model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
-                "Qwen/Qwen2.5-VL-3B-Instruct", 
-                torch_dtype=torch.bfloat16,
-                device_map="auto",
+                "Qwen/Qwen2.5-VL-3B-Instruct",
+                torch_dtype=torch.float16,
+                device_map="cuda",
                 low_cpu_mem_usage=True,
                 trust_remote_code=True
             )
@@ -32,6 +32,38 @@ class QwenCaptionService:
         except Exception as e:
             print(f"모델 로드 오류: {str(e)}")
             raise e
+    
+    # 모델 unload / VRAM 해제
+    def unload(self) -> bool:
+        try:
+            if self.model is not None:
+                del self.model
+            if self.processor is not None:
+                del self.processor
+            self.model = None
+            self.processor = None
+            torch.cuda.empty_cache()
+            gc.collect()
+            return True
+        except Exception as e:
+            print(f"언로드 오류: {e}")
+            return False
+
+    # 모델 reload
+    def reload(self) -> bool:
+        ok = self.unload()
+        if not ok: 
+            return False
+        self._load_model()
+        return True
+
+    # GPU 메모리 조회
+    def gpu_memory(self) -> dict:
+        try:
+            free, total = torch.cuda.mem_get_info()
+            return {"free": int(free), "total": int(total), "used": int(total - free)}
+        except Exception as e:
+            return {"error": str(e)}
     
     def generate_caption_and_tags(self, image: Image.Image) -> Dict[str, Any]:
         try:

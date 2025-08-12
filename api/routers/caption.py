@@ -60,3 +60,30 @@ async def generate_image_caption(
             status_code=500,
             detail=f"서버 오류: {str(e)}"
         )
+
+# VRAM 비우기
+@router.post("/free-vram")
+async def free_vram():
+    import torch, gc
+    try:
+        gc.collect()
+        torch.cuda.empty_cache()
+        free, total = torch.cuda.mem_get_info()
+        return {"status": "ok", "free": int(free), "total": int(total), "used": int(total - free)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# 모델 unload
+@router.post("/reload-model")
+async def reload_model():
+    svc = get_qwen_service()
+    ok = svc.reload()
+    if not ok:
+        raise HTTPException(status_code=500, detail="모델 unload 실패")
+    return {"status": "reloaded"}
+
+# GPU 메모리 조회
+@router.get("/memory")
+async def gpu_memory():
+    svc = get_qwen_service()
+    return svc.gpu_memory()
