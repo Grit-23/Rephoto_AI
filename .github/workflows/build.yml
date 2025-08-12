@@ -63,9 +63,7 @@ jobs:
           docker system prune -af --volumes || true
 
       - name: pull latest image
-        run: |
-          docker pull ${{ env.DOCKER_IMAGE }}:latest
-
+        run: docker pull ${{ env.DOCKER_IMAGE }}:latest
 
       - name: Docker run
         run: |
