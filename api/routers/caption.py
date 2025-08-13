@@ -1,16 +1,16 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException
-from fastapi.responses import JSONResponse
 from PIL import Image
 import io
 from typing import Dict, Any
 from utils.image_utils import get_qwen_service
+from models.response_models import ImageCaptionResponse
 
 router = APIRouter(prefix="/caption", tags=["caption"])
 
-@router.post("/generate")
+@router.post("/generate", response_model=ImageCaptionResponse)
 async def generate_image_caption(
     file: UploadFile = File(...)
-) -> JSONResponse:
+) -> ImageCaptionResponse:
 
     try:
         if not file.content_type or not file.content_type.startswith("image/"):
@@ -41,15 +41,11 @@ async def generate_image_caption(
         qwen_service = get_qwen_service()
         result = qwen_service.generate_caption_and_tags(image)
         
-        response_data = {
-            "explanation": result["explanation"],
-            "tags": result["tags"],
-            "explanation_embedding": result["explanation_embedding"]
-        }
-        
-        return JSONResponse(
-            status_code=200,
-            content=response_data
+        return ImageCaptionResponse(
+            explanation=result["explanation"],
+            tags=result["tags"],
+            explanation_embedding=result["explanation_embedding"],
+            private_info=result["private_info"]
         )
         
     except HTTPException:

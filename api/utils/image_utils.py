@@ -65,6 +65,8 @@ class QwenCaptionService:
         except Exception as e:
             return {"error": str(e)}
     
+
+    
     def generate_caption_and_tags(self, image: Image.Image) -> Dict[str, Any]:
         try:
             torch.cuda.empty_cache()
@@ -82,6 +84,8 @@ class QwenCaptionService:
                             "text": """
                             이 이미지를 한 줄로 핵심만 뽑아 자세히 설명해주세요. 길이는 150 토큰 이하로 해주세요. 
                             그리고 이어서 '태그:'라고 쓰고 이 이미지를 나타내는 핵심 태그 3개 이하를 쉼표로 구분해서 작성해주세요.
+                            
+                            마지막으로 '개인정보:'라고 쓰고, 이 이미지에 개인정보(이름, 전화번호, 주민등록번호, 생년월일, 이메일, 신용카드번호, 계좌번호, 주소 등)가 포함되어 있으면 'YES', 없으면 'NO'라고 적어주세요.
                             """
                         },
                     ],
@@ -135,30 +139,42 @@ class QwenCaptionService:
     
     def _parse_output(self, output: str) -> Dict[str, Any]:
         try:
+            explanation = output.strip()
+            tags = []
+            private_info = False
+            
+            # 태그 파싱
             if '태그:' in output:
                 parts = output.split('태그:', 1)
                 explanation = parts[0].strip()
-                tag_part = parts[1].strip()
-            else:
-                explanation = output.strip()
-                tag_part = ""
-            
-            tags = []
-            if tag_part:
-                raw_tags = [tag.strip() for tag in tag_part.split(',')]
-                tags = raw_tags[:3]
-                tags = [tag for tag in tags if tag]
+                remaining = parts[1].strip()
+                
+                # 개인정보 부분 확인
+                if '개인정보:' in remaining:
+                    tag_part, privacy_part = remaining.split('개인정보:', 1)
+                    tag_part = tag_part.strip()
+                    private_info = 'YES' in privacy_part.strip().upper()
+                else:
+                    tag_part = remaining
+                
+                # 태그 처리
+                if tag_part:
+                    raw_tags = [tag.strip() for tag in tag_part.split(',')]
+                    tags = raw_tags[:3]
+                    tags = [tag for tag in tags if tag]
             
             return {
                 "explanation": explanation,
-                "tags": tags
+                "tags": tags,
+                "private_info": private_info
             }
             
         except Exception as e:
             print(f"파싱 오류: {str(e)}")
             return {
                 "explanation": output.strip(),
-                "tags": []
+                "tags": [],
+                "private_info": False
             }
 
 _qwen_service = None
