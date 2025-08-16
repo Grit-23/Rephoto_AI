@@ -10,7 +10,7 @@ import gc
 # 메모리 최적화 설정
 torch.cuda.empty_cache()
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
-os.environ["CUDA_LAUNCH_BLOCKING"] = "1"  # 디버깅을 위한 설정
+os.environ["CUDA_LAUNCH_BLOCKING"] = "2"  # 디버깅을 위한 설정
 
 # 더 안전한 모델 로딩
 model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
