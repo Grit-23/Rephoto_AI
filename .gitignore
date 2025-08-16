@@ -143,6 +143,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+models/test_model/MiniGemini/mgm_env/
 
 # Spyder project settings
 .spyderproject
@@ -229,4 +230,8 @@ Thumbs.db
 ehthumbs.db
 
 # image dataset
-dataset/Flicker8k_images/
+dataset/Flickr8k_images/
+
+# test json some of parts
+models/test_model/gpt/output_3.json
+models/test_model/gpt/output_2.json
