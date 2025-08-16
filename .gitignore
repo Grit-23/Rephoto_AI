@@ -227,3 +227,6 @@ uvicorn.log
 .DS_Store?
 Thumbs.db
 ehthumbs.db
+
+# image dataset
+dataset/Flicker8k_images/
