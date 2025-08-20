@@ -4,7 +4,7 @@ import io
 import asyncio
 import time
 from typing import Dict, Any
-from utils.image_utils import get_qwen_service
+from utils.image_utils import get_qwen_service, clear_qwen_service
 from models.response_models import ImageCaptionResponse
 
 # 요청 순차 처리용 세마포어
@@ -91,11 +91,33 @@ async def free_vram():
 # 모델 unload
 @router.post("/reload-model")
 async def reload_model():
-    svc = get_qwen_service()
-    ok = svc.reload()
-    if not ok:
-        raise HTTPException(status_code=500, detail="모델 unload 실패")
-    return {"status": "reloaded"}
+    try:
+        clear_qwen_service()
+        return {"status": "reloaded", "message": "모델 메모리 정리 완료"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"모델 unload 실패: {str(e)}")
+
+# 강제 메모리 정리
+@router.post("/force-clear-memory")
+async def force_clear_memory():
+    import torch
+    import gc
+    try:
+        clear_qwen_service()
+        torch.cuda.empty_cache()
+        gc.collect()
+        
+        if torch.cuda.is_available():
+            allocated = torch.cuda.memory_allocated() / 1024**3
+            reserved = torch.cuda.memory_reserved() / 1024**3
+            return {
+                "status": "cleared",
+                "allocated_gb": round(allocated, 2),
+                "reserved_gb": round(reserved, 2)
+            }
+        return {"status": "cleared", "message": "GPU 메모리 정리 완료"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"메모리 정리 실패: {str(e)}")
 
 # GPU 메모리 조회
 @router.get("/memory")

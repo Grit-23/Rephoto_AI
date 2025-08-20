@@ -132,14 +132,25 @@ class QwenCaptionService:
             explanation_embedding = embedding_service.encode_text(result["explanation"])
             result["explanation_embedding"] = explanation_embedding
             
-            # 요청 완료 후 자동 메모리 정리
+            # 요청 완료 후 강력한 메모리 정리
+            del generated_ids, generated_ids_trimmed, output_text, inputs
             torch.cuda.empty_cache()
             gc.collect()
+            
+            # GPU 메모리 상태 확인
+            if torch.cuda.is_available():
+                allocated = torch.cuda.memory_allocated() / 1024**3
+                reserved = torch.cuda.memory_reserved() / 1024**3
+                print(f"GPU 메모리 - 할당: {allocated:.2f}GB, 예약: {reserved:.2f}GB")
             
             return result
             
         except Exception as e:
-            # 오류 발생 시에도 메모리 정리
+            # 오류 발생 시에도 강력한 메모리 정리
+            if 'generated_ids' in locals():
+                del generated_ids
+            if 'inputs' in locals():
+                del inputs
             torch.cuda.empty_cache()
             gc.collect()
             print(f"오류: {str(e)}")
@@ -192,3 +203,19 @@ def get_qwen_service() -> QwenCaptionService:
     if _qwen_service is None:
         _qwen_service = QwenCaptionService()
     return _qwen_service
+
+def clear_qwen_service():
+    """Qwen 서비스 인스턴스를 정리하고 메모리 해제"""
+    global _qwen_service
+    if _qwen_service is not None:
+        # 모델을 CPU로 이동 후 메모리 해제
+        if hasattr(_qwen_service, 'model'):
+            _qwen_service.model.cpu()
+            del _qwen_service.model
+        if hasattr(_qwen_service, 'processor'):
+            del _qwen_service.processor
+        del _qwen_service
+        _qwen_service = None
+        torch.cuda.empty_cache()
+        gc.collect()
+        print("Qwen 서비스 메모리 정리 완료")
