@@ -128,11 +128,9 @@ class QwenCaptionService:
             text = self.processor.apply_chat_template(
                 messages, tokenize=False, add_generation_prompt=True
             )
-            image_inputs, video_inputs = process_vision_info(messages)
             inputs = self.processor(
                 text=[text],
-                images=image_inputs,
-                videos=video_inputs,
+                images=[image],
                 padding=True,
                 return_tensors="pt",
             )
@@ -151,12 +149,17 @@ class QwenCaptionService:
                         pad_id = eos_id
                     generation_config = {
                         "max_new_tokens": 150,  # 토큰 수 줄임
-                        "do_sample": False,     # 확률적 샘플링 비활성화
+                        "min_new_tokens": 16,
+                        "do_sample": True,     # 확률적 샘플링 비활성화
+                        "temperature": 0.7,
+                        "top_p": 0.9,
+                        "repetition_penalty": 1.2,
+                        "no_repeat_ngram_size": 6,
                         "num_beams": 1,         # 빔 서치 사용
                         "pad_token_id": pad_id,
                         "eos_token_id": eos_id,
-                        "early_stopping": True,
-                }
+                        "use_cache": True,
+                    }
                 
                 # 입력 텐서 검증
                 if torch.isnan(inputs.input_ids).any() or torch.isinf(inputs.input_ids).any():
