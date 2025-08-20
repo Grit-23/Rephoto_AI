@@ -12,6 +12,7 @@ class QwenCaptionService:
     def __init__(self):
         self.model = None
         self.processor = None
+        self.auto_unload = True  # 매 요청마다 자동 언로드
         self._load_model()
     
     def _load_model(self):
@@ -69,6 +70,11 @@ class QwenCaptionService:
     
     def generate_caption_and_tags(self, image: Image.Image) -> Dict[str, Any]:
         try:
+            # 모델이 언로드되어 있으면 다시 로드
+            if self.model is None or self.processor is None:
+                print("모델 재로드 중...")
+                self._load_model()
+            
             torch.cuda.empty_cache()
             gc.collect()
             messages = [
@@ -142,6 +148,11 @@ class QwenCaptionService:
                 allocated = torch.cuda.memory_allocated() / 1024**3
                 reserved = torch.cuda.memory_reserved() / 1024**3
                 print(f"GPU 메모리 - 할당: {allocated:.2f}GB, 예약: {reserved:.2f}GB")
+            
+            # 매 요청마다 모델 언로드 (자원 제한으로 인해)
+            if self.auto_unload:
+                self.unload()
+                print("모델이 언로드되었습니다. (GPU 메모리 해제)")
             
             return result
             
