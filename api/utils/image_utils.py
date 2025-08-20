@@ -110,9 +110,10 @@ class QwenCaptionService:
                     **inputs, 
                     max_new_tokens=200,
                     do_sample=True,
-                    temperature=0.7,
-                    top_p=0.9,
+                    temperature=0.3,
+                    top_p=0.8,
                     pad_token_id=self.processor.tokenizer.eos_token_id,
+                    repetition_penalty=1.1,  # 반복 방지
                 )
             
             generated_ids_trimmed = [
@@ -131,9 +132,16 @@ class QwenCaptionService:
             explanation_embedding = embedding_service.encode_text(result["explanation"])
             result["explanation_embedding"] = explanation_embedding
             
+            # 요청 완료 후 자동 메모리 정리
+            torch.cuda.empty_cache()
+            gc.collect()
+            
             return result
             
         except Exception as e:
+            # 오류 발생 시에도 메모리 정리
+            torch.cuda.empty_cache()
+            gc.collect()
             print(f"오류: {str(e)}")
             raise e
     
