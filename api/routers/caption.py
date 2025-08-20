@@ -12,7 +12,7 @@ MAX_CONCURRENT_REQUESTS = 1  # 동시 요청 수 제한
 request_semaphore = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
 
 # 마지막 요청 시간 추적
-last_request_time = 0
+last_request_time = 0.0
 MIN_REQUEST_INTERVAL = 0.5  # 최소 요청 간격 (초)
 
 router = APIRouter(prefix="/caption", tags=["caption"])
@@ -22,15 +22,13 @@ async def generate_image_caption(
     file: UploadFile = File(...)
 ) -> ImageCaptionResponse:
     global last_request_time
-    
-    # 요청 간격 제한
-    current_time = time.time()
-    if current_time - last_request_time < MIN_REQUEST_INTERVAL:
-        await asyncio.sleep(MIN_REQUEST_INTERVAL - (current_time - last_request_time))
-    last_request_time = time.time()
-
-    # 세마포어로 순차 처리
-    async with request_semaphore:
+    async with request_semaphore:  # 순차 처리 구간
+        now = time.time()
+        delta = now - last_request_time
+        if delta < MIN_REQUEST_INTERVAL:
+            # 혼잡: 429로 즉시 응답 (프론트 재시도)
+            raise HTTPException(status_code=429, detail=f"Busy: retry after {MIN_REQUEST_INTERVAL - delta:.2f}s")
+        last_request_time = now
         try:
             if not file.content_type or not file.content_type.startswith("image/"):
                 raise HTTPException(
@@ -49,6 +47,7 @@ async def generate_image_caption(
             
             try:
                 image = Image.open(io.BytesIO(image_data))
+                image.load()
                 if image.mode != 'RGB':
                     image = image.convert('RGB')
             except Exception as e:

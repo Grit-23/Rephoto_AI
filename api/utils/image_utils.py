@@ -1,6 +1,7 @@
 from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
 from qwen_vl_utils import process_vision_info
 import torch
+import contextlib
 import gc
 import os
 import re
@@ -12,15 +13,11 @@ class QwenCaptionService:
     def __init__(self):
         self.model = None
         self.processor = None
-        self.auto_unload = True  # 매 요청마다 자동 언로드
+        self.auto_unload = False  # 매 요청마다 자동 언로드
         self._load_model()
     
     def _load_model(self):
         try:
-            # 강력한 메모리 정리
-            torch.cuda.empty_cache()
-            gc.collect()
-            
             # CUDA 설정
             os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
             
@@ -36,7 +33,9 @@ class QwenCaptionService:
                 device_map="cuda",
                 low_cpu_mem_usage=True,
                 trust_remote_code=True,
-                attn_implementation="flash_attention_2"  # 더 안정적인 어텐션 구현
+                attn_implementation="sdpa",  # 더 안정적인 어텐션 구현
+                max_memory={0: "14500MiB"},
+                offload_folder="/tmp/qwen_offload"
             )
             
             self.processor = AutoProcessor.from_pretrained("Qwen/Qwen2.5-VL-3B-Instruct")
@@ -62,8 +61,8 @@ class QwenCaptionService:
             self.processor = None
             
             # 강력한 메모리 정리
-            torch.cuda.empty_cache()
             gc.collect()
+            torch.cuda.empty_cache()
             
             print("모델 언로드 완료")
             return True
@@ -105,8 +104,6 @@ class QwenCaptionService:
                 if self.model is None or self.processor is None:
                     raise RuntimeError("모델 로드 실패")
             
-            torch.cuda.empty_cache()
-            gc.collect()
             messages = [
                 {
                     "role": "user",
@@ -141,15 +138,24 @@ class QwenCaptionService:
             )
             inputs = inputs.to("cuda")
 
-            with torch.no_grad():
+            with torch.inference_mode():
                 # 더 안전한 생성 파라미터 설정
-                generation_config = {
-                    "max_new_tokens": 150,  # 토큰 수 줄임
-                    "do_sample": False,     # 확률적 샘플링 비활성화
-                    "num_beams": 1,         # 빔 서치 사용
-                    "pad_token_id": self.processor.tokenizer.eos_token_id,
-                    "eos_token_id": self.processor.tokenizer.eos_token_id,
-                    "early_stopping": True,
+                autocast_dtype = torch.float16 if torch.cuda.is_available() else None
+                amp_ctx = torch.cuda.amp.autocast(dtype=autocast_dtype) if autocast_dtype else contextlib.nullcontext()
+                with amp_ctx:
+                    pad_id = getattr(self.processor.tokenizer, "pad_token_id", None)
+                    eos_id = getattr(self.processor.tokenizer, "eos_token_id", None)
+                    if eos_id is None:
+                        raise RuntimeError("Tokenizer has no eos_token_id")
+                    if pad_id is None:
+                        pad_id = eos_id
+                    generation_config = {
+                        "max_new_tokens": 150,  # 토큰 수 줄임
+                        "do_sample": False,     # 확률적 샘플링 비활성화
+                        "num_beams": 1,         # 빔 서치 사용
+                        "pad_token_id": pad_id,
+                        "eos_token_id": eos_id,
+                        "early_stopping": True,
                 }
                 
                 # 입력 텐서 검증
@@ -196,9 +202,6 @@ class QwenCaptionService:
                 del video_inputs
             if 'text' in locals():
                 del text
-            
-            torch.cuda.empty_cache()
-            gc.collect()
             
             # GPU 메모리 상태 확인
             if torch.cuda.is_available():
