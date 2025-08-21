@@ -29,7 +29,7 @@ class QwenCaptionService:
             # CUDA 설정
             if self.device == "cuda":
                 torch.cuda.empty_cache()
-                os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+            os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
             
             # 모델 로드
             logger.info("Qwen 모델 로딩 중...")
@@ -200,10 +200,9 @@ class QwenCaptionService:
                 outputs = self.model.generate(
                     **inputs,
                     max_new_tokens=150,
-                    min_new_tokens=20,
-                    do_sample=True,
-                    top_p=0.9,
-                    repetition_penalty=1.15,
+                    min_new_tokens=10,
+                    do_sample=False,
+                    repetition_penalty=1.2,
                     no_repeat_ngram_size=3,
                     pad_token_id=self.processor.tokenizer.pad_token_id,
                     eos_token_id=self.processor.tokenizer.eos_token_id,
@@ -226,11 +225,21 @@ class QwenCaptionService:
                 
                 # 결과 검증 및 정리
                 if text and len(text.strip()) > 0:
-                    # 반복 문자 제거 (!!!!! 같은 경우)
+                    # 강력한 특수 문자 패턴 제거
                     import re
-                    text = re.sub(r'([!?.]){4,}', r'\1\1\1', text)
-                    text = re.sub(r'(.)\1{10,}', r'\1\1\1', text)  # 같은 문자 10번 이상 반복 제거
-                    return text.strip()
+                    # 특수 문자 반복 제거 (!!!!! 같은 경우)
+                    text = re.sub(r'[!@#$%^&*()_+\-=\[\]{};\':"\\|,.<>\/?]{3,}', '', text)
+                    # 같은 문자 3번 이상 반복 제거
+                    text = re.sub(r'(.)\1{3,}', r'\1\1', text)
+                    # 연속된 공백 제거
+                    text = re.sub(r'\s+', ' ', text)
+                    
+                    # 최소 길이 체크
+                    cleaned_text = text.strip()
+                    if len(cleaned_text) >= 5:
+                        return cleaned_text
+                    else:
+                        raise ValueError("Generated text too short")
                 else:
                     raise ValueError("Empty output")
                     
@@ -266,11 +275,15 @@ class QwenCaptionService:
                         )
                         
                         if text and len(text.strip()) > 0:
-                            # 반복 문자 제거
+                            # 강력한 특수 문자 필터링
                             import re
-                            text = re.sub(r'([!?.]){4,}', r'\1\1\1', text)
-                            text = re.sub(r'(.)\1{10,}', r'\1\1\1', text)
-                            return text.strip()
+                            text = re.sub(r'[!@#$%^&*()_+\-=\[\]{};\':"\\|,.<>\/?]{3,}', '', text)
+                            text = re.sub(r'(.)\1{3,}', r'\1\1', text)
+                            text = re.sub(r'\s+', ' ', text)
+                            
+                            cleaned_text = text.strip()
+                            if len(cleaned_text) >= 5:
+                                return cleaned_text
                     
                 except Exception as e2:
                     logger.error(f"폴백도 실패: {e2}")
