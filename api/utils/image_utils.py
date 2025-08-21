@@ -209,8 +209,8 @@ class QwenCaptionService:
                     eos_token_id=self.processor.tokenizer.eos_token_id,
                 )
                 
-                # 입력 부분 제거
-                input_len = inputs.input_ids.shape[1]
+                # 입력 부분 제거 (inputs는 딕셔너리)
+                input_len = inputs['input_ids'].shape[1]
                 generated_ids = outputs[:, input_len:]
                 
                 # 생성된 토큰이 있는지 확인
@@ -239,7 +239,8 @@ class QwenCaptionService:
                 
                 # 모델 상태 리셋
                 self.model.eval()
-                torch.cuda.empty_cache()
+                if self.device == "cuda":
+                    torch.cuda.empty_cache()
                 
                 try:
                     # 폴백: 매우 보수적인 설정
@@ -254,7 +255,7 @@ class QwenCaptionService:
                         eos_token_id=self.processor.tokenizer.eos_token_id,
                     )
                     
-                    input_len = inputs.input_ids.shape[1]
+                    input_len = inputs['input_ids'].shape[1]
                     generated_ids = outputs[:, input_len:]
                     
                     if generated_ids.shape[1] > 0:
