@@ -28,8 +28,8 @@ class QwenCaptionService:
             
             # CUDA 설정
             if self.device == "cuda":
-            torch.cuda.empty_cache()
-            os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+                torch.cuda.empty_cache()
+                os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
             
             # 모델 로드
             logger.info("Qwen 모델 로딩 중...")
@@ -56,8 +56,8 @@ class QwenCaptionService:
     
     def _cleanup_resources(self) -> None:
         """리소스 정리"""
-            if self.model is not None:
-                del self.model
+        if self.model is not None:
+            del self.model
             self.model = None
         if self.processor is not None:
             del self.processor
