@@ -95,6 +95,10 @@ class QwenCaptionService:
             설명, 태그, 개인정보 여부, 임베딩을 포함한 딕셔너리
         """
         try:
+            # 생성 전 메모리 정리
+            if self.device == "cuda":
+                torch.cuda.empty_cache()
+            
             # 모델 체크
             if self.model is None or self.processor is None:
                 logger.info("모델 재로드 필요")
@@ -147,13 +151,10 @@ class QwenCaptionService:
             "content": [
                 {"type": "image"},
                 {"type": "text", "text": (
-                    "이미지를 한 줄로 설명하세요.\n"
-                    "태그: 핵심 단어 3개 이하, 쉼표로 구분\n"
-                    "개인정보: YES 또는 NO\n\n"
-                    "형식:\n"
-                    "설명 한 줄\n"
-                    "태그: 태그1, 태그2, 태그3\n"
-                    "개인정보: NO"
+                    "이 이미지를 분석해주세요. 다음 형식으로 답변하세요:\n\n"
+                    "한 줄로 이미지의 주요 내용을 설명\n"
+                    "태그: 관련 키워드 1-3개\n"
+                    "개인정보: YES 또는 NO"
                 )}
             ]
         }]
@@ -166,73 +167,115 @@ class QwenCaptionService:
     
     def _prepare_inputs(self, image: Image.Image, prompt: str) -> Dict:
         """모델 입력 준비"""
+        # 프로세서 호출 전 이미지 크기 체크
+        max_size = 1920
+        if max(image.size) > max_size:
+            # 이미지가 너무 크면 리사이즈
+            ratio = max_size / max(image.size)
+            new_size = tuple(int(dim * ratio) for dim in image.size)
+            image = image.resize(new_size, Image.Resampling.LANCZOS)
+            logger.debug(f"이미지 리사이즈: {image.size}")
+        
         inputs = self.processor(
             text=[prompt],
             images=[image],
-            return_tensors="pt"
+            return_tensors="pt",
+            padding=True
         )
         
-        return inputs.to(self.device)
+        # 디바이스로 이동
+        inputs = {k: v.to(self.device) if torch.is_tensor(v) else v 
+                  for k, v in inputs.items()}
+        
+        return inputs
     
     def _generate_text(self, inputs: Dict) -> str:
         """텍스트 생성"""
         with torch.no_grad():
-            # 생성 파라미터
-            generation_config = {
-                "max_new_tokens": 150,
-                "temperature": 0.7,
-                "top_p": 0.9,
-                "do_sample": True,
-                "repetition_penalty": 1.1,
-            }
-            
             try:
-                # 생성
+                # 모델을 eval 모드로 확실히 설정
+                self.model.eval()
+                
+                # 안전한 생성 파라미터 (Qwen 모델에 맞게 조정)
                 outputs = self.model.generate(
                     **inputs,
-                    **generation_config
+                    max_new_tokens=150,
+                    min_new_tokens=20,
+                    do_sample=True,
+                    top_p=0.9,
+                    repetition_penalty=1.15,
+                    no_repeat_ngram_size=3,
+                    pad_token_id=self.processor.tokenizer.pad_token_id,
+                    eos_token_id=self.processor.tokenizer.eos_token_id,
                 )
                 
                 # 입력 부분 제거
                 input_len = inputs.input_ids.shape[1]
                 generated_ids = outputs[:, input_len:]
                 
-                # 디코딩 (None 값 방어)
-                decoded = self.processor.tokenizer.batch_decode(
-                    generated_ids,
+                # 생성된 토큰이 있는지 확인
+                if generated_ids.shape[1] == 0:
+                    raise ValueError("No tokens generated")
+                
+                # 디코딩
+                text = self.processor.tokenizer.decode(
+                    generated_ids[0],
                     skip_special_tokens=True,
                     clean_up_tokenization_spaces=False
                 )
                 
-                # 결과 검증
-                if decoded and decoded[0]:
-                    return decoded[0]
+                # 결과 검증 및 정리
+                if text and len(text.strip()) > 0:
+                    # 반복 문자 제거 (!!!!! 같은 경우)
+                    import re
+                    text = re.sub(r'([!?.]){4,}', r'\1\1\1', text)
+                    text = re.sub(r'(.)\1{10,}', r'\1\1\1', text)  # 같은 문자 10번 이상 반복 제거
+                    return text.strip()
                 else:
-                    raise ValueError("빈 출력")
+                    raise ValueError("Empty output")
                     
             except Exception as e:
                 logger.warning(f"생성 실패, 폴백 모드: {e}")
-                # 폴백: 더 보수적인 설정
-                outputs = self.model.generate(
-                    **inputs,
-                    max_new_tokens=100,
-                    do_sample=False,  # greedy
-                    repetition_penalty=1.2
-                )
                 
-                input_len = inputs.input_ids.shape[1]
-                generated_ids = outputs[:, input_len:]
+                # 모델 상태 리셋
+                self.model.eval()
+                torch.cuda.empty_cache()
                 
-                decoded = self.processor.tokenizer.batch_decode(
-                    generated_ids,
-                    skip_special_tokens=True,
-                    clean_up_tokenization_spaces=False
-                )
+                try:
+                    # 폴백: 매우 보수적인 설정
+                    outputs = self.model.generate(
+                        **inputs,
+                        max_new_tokens=80,
+                        min_new_tokens=20,
+                        do_sample=False,  # greedy decoding
+                        repetition_penalty=1.3,
+                        no_repeat_ngram_size=4,
+                        pad_token_id=self.processor.tokenizer.pad_token_id,
+                        eos_token_id=self.processor.tokenizer.eos_token_id,
+                    )
+                    
+                    input_len = inputs.input_ids.shape[1]
+                    generated_ids = outputs[:, input_len:]
+                    
+                    if generated_ids.shape[1] > 0:
+                        text = self.processor.tokenizer.decode(
+                            generated_ids[0],
+                            skip_special_tokens=True,
+                            clean_up_tokenization_spaces=False
+                        )
+                        
+                        if text and len(text.strip()) > 0:
+                            # 반복 문자 제거
+                            import re
+                            text = re.sub(r'([!?.]){4,}', r'\1\1\1', text)
+                            text = re.sub(r'(.)\1{10,}', r'\1\1\1', text)
+                            return text.strip()
+                    
+                except Exception as e2:
+                    logger.error(f"폴백도 실패: {e2}")
                 
-                if decoded and decoded[0]:
-                    return decoded[0]
-                else:
-                    return "이미지 분석 중 오류가 발생했습니다.\n태그: 이미지, 분석, 오류\n개인정보: NO"
+                # 최종 폴백 메시지
+                return "이미지를 분석했습니다.\n태그: 이미지, 사진, 파일\n개인정보: NO"
     
     def _parse_output(self, text: str) -> Dict[str, Any]:
         """출력 파싱"""
@@ -285,13 +328,21 @@ class QwenCaptionService:
     
     def _cleanup_after_generation(self) -> None:
         """생성 후 메모리 정리"""
+        # 모델 상태 리셋
+        if self.model is not None:
+            self.model.eval()
+        
+        # 메모리 정리
         gc.collect()
         if self.device == "cuda":
             torch.cuda.empty_cache()
+            torch.cuda.synchronize()  # GPU 작업 완료 대기
+            
             # 메모리 상태 로깅
             if torch.cuda.is_available():
                 allocated = torch.cuda.memory_allocated() / 1024**3
-                logger.debug(f"GPU 메모리 사용: {allocated:.2f}GB")
+                reserved = torch.cuda.memory_reserved() / 1024**3
+                logger.debug(f"GPU 메모리 - 할당: {allocated:.2f}GB, 예약: {reserved:.2f}GB")
 
 # 싱글톤 인스턴스
 _qwen_service: Optional[QwenCaptionService] = None
